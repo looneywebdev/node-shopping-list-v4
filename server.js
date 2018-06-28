@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const morgan = require('morgan');
@@ -31,6 +30,10 @@ app.get('/shopping-list', (req, res) => {
   res.json(ShoppingList.get());
 });
 
+app.get('/recipes', (req, res) => {
+  res.json(Recipes.get());
+});
+
 app.post('/shopping-list', jsonParser, (req, res) => {
   // ensure `name` and `budget` are in request body
   const requiredFields = ['name', 'budget'];
@@ -44,6 +47,22 @@ app.post('/shopping-list', jsonParser, (req, res) => {
   }
 
   const item = ShoppingList.create(req.body.name, req.body.budget);
+  res.status(201).json(item);
+});
+
+
+app.post('/recipes', jsonParser, (req, res) => {
+  // ensure `name` and `budget` are in request body
+  const requiredFields = ['name', 'ingredients'];
+  for (let i=0; i<requiredFields.length; i++) {
+    const field = requiredFields[i];
+    if (!(field in req.body)) {
+      const message = `Missing \`${field}\` in request body`
+      console.error(message);
+      return res.status(400).send(message);
+    }
+  }
+  const item = Recipes.create(req.body.name, req.body.ingredients);
   res.status(201).json(item);
 });
 
@@ -77,22 +96,9 @@ app.put('/shopping-list/:id', jsonParser, (req, res) => {
   res.status(204).end();
 });
 
-// when DELETE request comes in with an id in path,
-// try to delete that item from ShoppingList.
-app.delete('/shopping-list/:id', (req, res) => {
-  ShoppingList.delete(req.params.id);
-  console.log(`Deleted shopping list item \`${req.params.ID}\``);
-  res.status(204).end();
-});
-
-
-app.get('/recipes', (req, res) => {
-  res.json(Recipes.get());
-});
-
-app.post('/recipes', jsonParser, (req, res) => {
-  // ensure `name` and `budget` are in request body
-  const requiredFields = ['name', 'ingredients'];
+//PUT Recipes
+app.put('/recipes/:id', jsonParser, (req, res) => {
+  const requiredFields = ['name', 'id', 'ingredients'];
   for (let i=0; i<requiredFields.length; i++) {
     const field = requiredFields[i];
     if (!(field in req.body)) {
@@ -101,8 +107,33 @@ app.post('/recipes', jsonParser, (req, res) => {
       return res.status(400).send(message);
     }
   }
-  const item = Recipes.create(req.body.name, req.body.ingredients);
-  res.status(201).json(item);
+
+  if (req.params.id !== req.body.id) {
+    const message = `Request path id (${req.params.id}) and request body id (${req.body.id}) must match`;
+    console.error(message);
+    return res.status(400).send(message);
+  }
+  console.log(`Updating recipe item \`${req.params.id}\``);
+  try {
+    Recipes.update({
+      id: req.params.id,
+      name: req.body.name,
+      ingredients: req.body.ingredients
+    });
+    res.status(204).end();
+   } catch (error) {
+    console.log(error);
+    res.status(503).end();
+   }
+});
+
+
+// when DELETE request comes in with an id in path,
+// try to delete that item from ShoppingList.
+app.delete('/shopping-list/:id', (req, res) => {
+  ShoppingList.delete(req.params.id);
+  console.log(`Deleted shopping list item \`${req.params.ID}\``);
+  res.status(204).end();
 });
 
 app.delete('/recipes/:id', (req, res) => {

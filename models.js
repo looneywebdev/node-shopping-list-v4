@@ -76,7 +76,7 @@ const Recipes = {
     console.log(`Updating recipe with id \`${updatedItem.id}\``);
     const {id} = updatedItem;
     if (!(id in this.items)) {
-      throw StorageException(
+      throw new StorageException(
         `Can't update item \`${id}\` because doesn't exist.`)
     }
     this.items[updatedItem.id] = updatedItem;
